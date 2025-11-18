@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"time"
+
 	. "warehouse_app/structures"
 	. "warehouse_app/utils"
-
-	"golang.org/x/exp/rand"
 )
 
 func main() {
@@ -21,14 +20,15 @@ func main() {
 		"coldStorage": NewGenerator("coldStorage", 5927).Next,
 	}
 
-	// создание объектов
 	metrics := &Metrics{}
 	coldStorage := NewColdStorage(idGenerator["coldStorage"](), 5)
 	loaders := []*Loader{
 		CreateLoader(idGenerator["loader"]()),
 		CreateLoader(idGenerator["loader"]()),
 	}
+
 	warehouse := NewWarehouse([]*ColdStorage{coldStorage}, loaders, metrics)
+	dispatcher := warehouse.Dispatcher
 
 	suppliers := []*Supplier{
 		{ID: idGenerator["supplier"](), Name: "Молочная ферма", ProductType: "Молоко"},
@@ -42,29 +42,49 @@ func main() {
 
 	now := time.Now()
 
-	for step := 0; step < 1; step++ {
+	for step := 0; step < 2; step++ {
 		fmt.Printf("\n--- Шаг %d ---\n\n", step+1)
 
-		// 1. Приход новой партии от случайного поставщика для случайного магазина
 		sup := suppliers[0]
 		store := stores[0]
-		batch := sup.GenerateBatch(idGenerator["batch"](), "Молоко блин", store.Name, now)
 
-		fmt.Printf("Поставщик <%s> привёз партию <%s> для клиента <%s>, товар: <%s>\n",
-			sup.Name, batch.ID, batch.Client, batch.Name)
+		productName := sup.ProductType
+		batch := sup.GenerateBatch(idGenerator["batch"](), productName, store.Name, now)
 
-		status, err := warehouse.AcceptBatch(batch)
-		if !status || err != nil {
-			fmt.Println(err)
+		fmt.Printf(
+			"Поставщик <%s> привёз партию <%s> для клиента <%s>, товар: <%s>\n",
+			sup.Name, batch.ID, batch.Client, batch.Name,
+		)
+
+		if err := dispatcher.ReceiveBatch(batch); err != nil {
+			fmt.Println("Ошибка при приёме партии:", err)
 		}
 
-		// 2. Иногда приходит заказ от магазина
+		fmt.Printf("\n\nwarehouse cameras capasity %d\n", len(warehouse.Cameras))
+		fmt.Printf("camera capasity %d\n\n", len(warehouse.Cameras[0].Batches))
+
 		if step%2 == 1 {
-			orderStore := stores[rand.Intn(len(stores))]
+			orderStore := stores[0]
 			order := orderStore.CreateOrder(idGenerator["order"]())
-			warehouse.Dispatcher.ProcessOrder(order)
+
+			order.ProductName = productName
+
+			fmt.Printf(
+				"\nМагазин <%s> оформляет заказ <%s> на товар <%s>\n\n",
+				orderStore.Name, order.ID, order.ProductName,
+			)
+
+			dispatcher.ProcessOrder(order, orderStore)
 		}
 
 		time.Sleep(300 * time.Millisecond)
 	}
+
+	fmt.Printf(
+		"\n=== Итоговая статистика ===\nПринято партий:   %d\nСписано партий:   %d\nОтгружено партий: %d\n",
+		metrics.Received, metrics.Discarded, metrics.Delivered,
+	)
+
+	fmt.Printf("warehouse cameras capasity %d\n", len(warehouse.Cameras))
+	fmt.Printf("camera capasity %d", len(warehouse.Cameras[0].Batches))
 }

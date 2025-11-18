@@ -26,30 +26,37 @@ func NewWarehouse(storages []*ColdStorage, loaders []*Loader, metrics *Metrics) 
 	return w
 }
 
-// Приём партии с вытеснением самой старой, если всё занято
-func (w *Warehouse) AcceptBatch(b Batch) (bool, error) {
+// AcceptBatch:
+// - возвращает вытесненную партию (если была) и ошибку (если совсем не смогли принять).
+func (w *Warehouse) AcceptBatch(b Batch) (*Batch, error) {
 	fmt.Printf("\n[Warehouse]: Поступление партии: %s, %s\n", b.Name, b.ID)
 
-	// поиск незаполненных камер
+	// 1. Ищем незаполненную камеру
 	for _, cs := range w.Cameras {
 		if !cs.IsFull() {
-			if cs.AddBatch(b) {
-				return true, nil
+			if err := cs.AddBatch(b); err != nil {
+				return nil, fmt.Errorf("не удалось добавить партию в незаполненную камеру: %w", err)
 			}
-			return false, fmt.Errorf("неудалось добавить партию в незаполненную камеру")
+			return nil, nil // никто не вытеснен
 		}
 	}
 
+	// 2. Все камеры заполнены — ищем камеру с самой "старой" партией
 	cameraWithOldestBatch := w.getColdStorageWithOldestBatch()
 	if cameraWithOldestBatch == nil {
-		return false, fmt.Errorf("Нет доступных камер для размещения партии")
+		return nil, fmt.Errorf("нет доступных камер для размещения партии")
 	}
 
-	res := cameraWithOldestBatch.AddBatch(b)
-	if res {
-		return true, nil
+	discarded, err := cameraWithOldestBatch.RemoveOldest()
+	if err != nil {
+		return nil, fmt.Errorf("не удалось удалить старую партию: %w", err)
 	}
-	return false, fmt.Errorf("Неудалось принять партию")
+
+	if err := cameraWithOldestBatch.AddBatch(b); err != nil {
+		return discarded, fmt.Errorf("не удалось добавить новую партию после вытеснения: %w", err)
+	}
+
+	return discarded, nil
 }
 
 func (w *Warehouse) getColdStorageWithOldestBatch() *ColdStorage {
@@ -71,7 +78,6 @@ func (w *Warehouse) getColdStorageWithOldestBatch() *ColdStorage {
 			initialized = true
 		}
 	}
-
 	return oldestStorage
 }
 
@@ -80,6 +86,7 @@ func (w *Warehouse) FetchBatchForClient(client string, name string) (*Batch, err
 	for _, cs := range w.Cameras {
 		batch, err := cs.TakeBatchByClientAndName(client, name)
 		if err == nil {
+			fmt.Printf("[Warehouser]: Взят товар для клиента %s, с именем %s\n", client, name)
 			return batch, nil
 		}
 	}

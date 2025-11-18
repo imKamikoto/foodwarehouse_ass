@@ -1,8 +1,6 @@
 package structures
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type ColdStorage struct {
 	ID       string
@@ -18,32 +16,31 @@ func NewColdStorage(id string, capacity int) *ColdStorage {
 	}
 }
 
-// - если есть место — просто добавляем;
-// - если места нет — удаляем самую старую партию и добавляем новую;
-// - если по какой-то причине удалить не удалось — возвращаем false.
-func (cs *ColdStorage) AddBatch(newBatch Batch) bool {
+// AddBatch:
+// - если есть место — кладём;
+// - если нет — возвращаем ошибку (вытеснение НЕ здесь).
+func (cs *ColdStorage) AddBatch(newBatch Batch) error {
 	if cs.IsFull() {
-		ok, err := cs.removeOldest()
-		if !ok || err != nil {
-			return false
-		}
+		return fmt.Errorf("cold storage %s is full", cs.ID)
 	}
+
 	fmt.Printf(
-		"[ColdStorage: %s]: Принимает новую поставку <%s>, <%s>, для <%s>",
+		"[ColdStorage: %s]: Принимает новую поставку <%s>, <%s>, для <%s>\n",
 		cs.ID, newBatch.ID, newBatch.Name, newBatch.Client,
 	)
 	cs.Batches = append(cs.Batches, newBatch)
-	return true
+	return nil
 }
 
-func (cs *ColdStorage) removeOldest() (bool, error) {
+// RemoveOldest — удаляет и возвращает самую "старую" партию по ExpiryDate.
+func (cs *ColdStorage) RemoveOldest() (*Batch, error) {
 	if len(cs.Batches) == 0 {
-		return false, fmt.Errorf("cold storage empty (Batches size = 0)")
+		return nil, fmt.Errorf("cold storage %s empty (Batches size = 0)", cs.ID)
 	}
 
 	oldestBatch, oldestIdx := cs.GetOldestBatch()
 	if oldestBatch == nil || oldestIdx < 0 {
-		return false, fmt.Errorf("failed to find oldest batch")
+		return nil, fmt.Errorf("failed to find oldest batch in %s", cs.ID)
 	}
 
 	fmt.Printf(
@@ -53,7 +50,7 @@ func (cs *ColdStorage) removeOldest() (bool, error) {
 
 	cs.Batches = append(cs.Batches[:oldestIdx], cs.Batches[oldestIdx+1:]...)
 
-	return true, nil
+	return oldestBatch, nil
 }
 
 func (cs *ColdStorage) IsFull() bool {
@@ -74,7 +71,6 @@ func (cs *ColdStorage) GetOldestBatch() (*Batch, int) {
 			oldestIdx = i
 		}
 	}
-
 	return &cs.Batches[oldestIdx], oldestIdx
 }
 
@@ -82,9 +78,7 @@ func (cs *ColdStorage) TakeBatchByClientAndName(clientName string, name string) 
 	for i, b := range cs.Batches {
 		if b.Client == clientName && b.Name == name {
 			batch := b
-
 			cs.Batches = append(cs.Batches[:i], cs.Batches[i+1:]...)
-
 			return &batch, nil
 		}
 	}

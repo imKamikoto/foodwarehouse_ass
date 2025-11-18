@@ -1,5 +1,6 @@
 package structures
 
+// sdelatb normalno, a to poka tolko hrenb!!!!
 type Metrics struct {
 	Received  int
 	Discarded int

@@ -1,9 +1,14 @@
 package structures
 
+import (
+	"fmt"
+	"time"
+)
+
 type Loader struct {
-	ID           string // id погрузчика
-	IsBusy       bool   // занятость
-	CurrentOrder *Order // текущий заказ
+	ID           string
+	IsBusy       bool
+	CurrentOrder *Order
 }
 
 func CreateLoader(id string) *Loader {
@@ -14,22 +19,27 @@ func CreateLoader(id string) *Loader {
 	}
 }
 
-func (l *Loader) ServeClient(w *Warehouse, order Order) {
-	// l.IsBusy = true
-	// defer func() { l.IsBusy = false }()
+func (l *Loader) ServeClient(w *Warehouse, order Order, store *Store) {
+	fmt.Printf("[Loader: %s]: Начинает отгрузку заказа <%s>, для <%s>\n", l.ID, order.ID, order.Client)
+	l.IsBusy = true
+	defer func() { l.IsBusy = false }()
 
-	// for {
-	// 	batch, ok := w.FetchBatchForClient(order.Client)
-	// 	if !ok {
-	// 		// fmt.Printf("Погрузчик %d: Больше нет партий для клиента %s\n", l.ID, order.Client)
-	// 		break
-	// 	}
-	// 	w.Metrics.LogDelivery(batch)
-	// 	// fmt.Printf("Погрузчик %d: Отгружена партия %s для клиента %s\n",
-	// 	// l.ID, batch.ID, batch.Client)
-	// 	// для наглядности чуть "замедлим" отгрузку
-	// 	time.Sleep(200 * time.Millisecond)
-	// }
-	// // fmt.Printf("Погрузчик %d: Завершил обслуживание заказа %d клиента %s\n",
-	// // l.ID, order.ID, order.Client)
+	productName := order.ProductName
+
+	for {
+
+		time.Sleep(time.Second * 1)
+
+		batch, err := w.FetchBatchForClient(order.Client, productName)
+		if err != nil {
+			break
+		}
+		// fmt.Printf("[Loader: %s]: Взял товар <%s>-<%s> для <%s>-<%s>\n", l.ID, batch.ID, batch.Name, store.ID, store.Name)
+		w.Metrics.LogDelivery(*batch)
+
+		// nyyyyyy
+		store.AddAssortment(batch)
+
+		time.Sleep(time.Second * 1)
+	}
 }
