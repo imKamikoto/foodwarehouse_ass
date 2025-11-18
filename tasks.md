@@ -16,7 +16,7 @@
     - [x] Batch
     - [x] Dispatcher
     - [x] Loader
-    - [] Metrics
+    - [ ] Metrics
     - [x] Store
     - [x] Warehouse
 - [ ] Реализация утилит
