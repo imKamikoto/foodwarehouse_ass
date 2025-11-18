@@ -1,4 +1,4 @@
-# FoodWarehouse_project_APS
+# Food Warehouse project (architecture of software systems)
 
 **Аракелян Даниил Арсенович 5130904/30108**  
 **Склад скоропортящихся продуктов**
