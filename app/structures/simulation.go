@@ -141,8 +141,8 @@ func (s *Simulation) RunUntil() {}
 func (s *Simulation) logFinalStats() {
 	slog.Info("=== Итоговая статистика ===\n",
 		"received", s.Metrics.Received,
-		"\ndiscarded", s.Metrics.Discarded,
-		"\ndelivered", s.Metrics.Delivered,
+		"discarded", s.Metrics.Discarded,
+		"delivered", s.Metrics.Delivered,
 	)
 
 	slog.Info("warehouse cameras",
