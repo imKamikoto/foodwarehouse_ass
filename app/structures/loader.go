@@ -2,6 +2,7 @@ package structures
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -20,7 +21,7 @@ func CreateLoader(id string) *Loader {
 }
 
 func (l *Loader) ServeClient(w *Warehouse, order Order, store *Store) {
-	fmt.Printf("[Loader: %s]: Начинает отгрузку заказа <%s>, для <%s>\n", l.ID, order.ID, order.Client)
+	slog.Info(fmt.Sprintf("[Loader: %s]: Начинает отгрузку заказа <%s>, для <%s>\n", l.ID, order.ID, order.Client))
 	l.IsBusy = true
 	defer func() { l.IsBusy = false }()
 
@@ -34,7 +35,8 @@ func (l *Loader) ServeClient(w *Warehouse, order Order, store *Store) {
 		if err != nil {
 			break
 		}
-		// fmt.Printf("[Loader: %s]: Взял товар <%s>-<%s> для <%s>-<%s>\n", l.ID, batch.ID, batch.Name, store.ID, store.Name)
+
+		slog.Info(fmt.Sprintf("[Loader: %s]: Взял товар <%s>-<%s> для <%s>-<%s>\n", l.ID, batch.ID, batch.Name, store.ID, store.Name))
 		w.Metrics.LogDelivery(*batch)
 
 		// nyyyyyy

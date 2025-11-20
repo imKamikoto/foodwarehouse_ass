@@ -1,6 +1,9 @@
 package structures
 
-import "fmt"
+import (
+	"fmt"
+	"log/slog"
+)
 
 type Store struct {
 	ID         string
@@ -25,6 +28,6 @@ func (s *Store) CreateOrder(orderId string) Order {
 }
 
 func (s *Store) AddAssortment(batch *Batch) {
-	fmt.Printf("[Store: %s]: Заказанный товар добавлен в ассортимент магазина\n", s.ID)
+	slog.Info(fmt.Sprintf("[Store: %s]: Заказанный товар добавлен в ассортимент магазина\n", s.ID))
 	s.Assortment = append(s.Assortment, batch)
 }

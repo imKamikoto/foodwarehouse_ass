@@ -1,6 +1,9 @@
 package structures
 
-import "fmt"
+import (
+	"fmt"
+	"log/slog"
+)
 
 type ColdStorage struct {
 	ID       string
@@ -24,10 +27,10 @@ func (cs *ColdStorage) AddBatch(newBatch Batch) error {
 		return fmt.Errorf("cold storage %s is full", cs.ID)
 	}
 
-	fmt.Printf(
-		"[ColdStorage: %s]: Принимает новую поставку <%s>, <%s>, для <%s>\n",
+	slog.Info(fmt.Sprintf(
+		"🧊 [ColdStorage: %s]: Принимает новую поставку <%s>, <%s>, для <%s>\n",
 		cs.ID, newBatch.ID, newBatch.Name, newBatch.Client,
-	)
+	))
 	cs.Batches = append(cs.Batches, newBatch)
 	return nil
 }
@@ -43,10 +46,10 @@ func (cs *ColdStorage) RemoveOldest() (*Batch, error) {
 		return nil, fmt.Errorf("failed to find oldest batch in %s", cs.ID)
 	}
 
-	fmt.Printf(
+	slog.Info(fmt.Sprintf(
 		"[ColdStorage: %s]: Утилизирует старый товар <%s>, <%s>, для <%s>\n",
 		cs.ID, oldestBatch.ID, oldestBatch.Name, oldestBatch.Client,
-	)
+	))
 
 	cs.Batches = append(cs.Batches[:oldestIdx], cs.Batches[oldestIdx+1:]...)
 

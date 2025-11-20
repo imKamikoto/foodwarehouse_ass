@@ -2,6 +2,7 @@ package structures
 
 import (
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -29,7 +30,7 @@ func NewWarehouse(storages []*ColdStorage, loaders []*Loader, metrics *Metrics) 
 // AcceptBatch:
 // - возвращает вытесненную партию (если была) и ошибку (если совсем не смогли принять).
 func (w *Warehouse) AcceptBatch(b Batch) (*Batch, error) {
-	fmt.Printf("\n[Warehouse]: Поступление партии: %s, %s\n", b.Name, b.ID)
+	slog.Info(fmt.Sprintf("🧊🏬 [Warehouse]: Поступление партии: %s, %s\n", b.Name, b.ID))
 
 	// 1. Ищем незаполненную камеру
 	for _, cs := range w.Cameras {
@@ -86,7 +87,7 @@ func (w *Warehouse) FetchBatchForClient(client string, name string) (*Batch, err
 	for _, cs := range w.Cameras {
 		batch, err := cs.TakeBatchByClientAndName(client, name)
 		if err == nil {
-			fmt.Printf("[Warehouser]: Взят товар для клиента %s, с именем %s\n", client, name)
+			slog.Info(fmt.Sprintf("🧊🏬 [Warehouser]: Взят товар для клиента %s, с именем %s\n", client, name))
 			return batch, nil
 		}
 	}
