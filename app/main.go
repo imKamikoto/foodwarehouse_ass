@@ -20,7 +20,7 @@ func main() {
 	sim := NewSimulation(start, step)
 
 	// Пошаговый режим:
-	sim.RunSteps(10)
+	sim.RunSteps(5)
 
 	// // Автоматический режим (например, 10 минут модельного времени):
 	// sim.RunUntil(10 * time.Minute)

@@ -105,16 +105,17 @@ func (s *Simulation) SimulationStep() {
 	}
 
 	// 2. Заказы: например, с вероятностью 0.5 на шаг
-	if s.rng.Float64() < 0.5 {
+	if s.rng.Float64() < 0.8 {
 		s.createRandomOrder(productName)
 	}
+	// s.createRandomOrder(i, productName)
 }
 
 // отдельный метод для формирования заказа
 func (s *Simulation) createRandomOrder(productName string) {
 	orderStore := s.Stores[s.rng.Intn(len(s.Stores))]
-	order := orderStore.CreateOrder(s.IDGen["order"]())
-	order.ProductName = productName
+	order := orderStore.CreateOrder(s.IDGen["order"](), productName)
+	// order.ProductName = productName
 
 	slog.Info("new order",
 		"store", orderStore.Name,
@@ -154,5 +155,16 @@ func (s *Simulation) logFinalStats() {
 			"id", s.Warehouse.Cameras[0].ID,
 			"batches", len(s.Warehouse.Cameras[0].Batches),
 		)
+	}
+
+	slog.Info("stores info")
+	for _, store := range s.Stores {
+		slog.Info("name", "store_name", store.Name)
+		for _, order := range store.Orders {
+			slog.Info("orders", "order_name", order.ProductName, "order_id", order.ID)
+		}
+		for _, a := range store.Assortment {
+			slog.Info("assortment", "name", a.Name, "order_id", a.ID)
+		}
 	}
 }

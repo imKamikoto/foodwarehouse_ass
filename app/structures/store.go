@@ -21,8 +21,8 @@ func NewStore(id string, name string) *Store {
 	}
 }
 
-func (s *Store) CreateOrder(orderId string) Order {
-	newOrder := Order{ID: orderId, Client: s.Name}
+func (s *Store) CreateOrder(orderId string, productName string) Order {
+	newOrder := Order{ID: orderId, Client: s.Name, ProductName: productName}
 	s.Orders = append(s.Orders, newOrder)
 	return newOrder
 }

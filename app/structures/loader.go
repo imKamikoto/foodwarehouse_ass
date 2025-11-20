@@ -33,6 +33,7 @@ func (l *Loader) ServeClient(w *Warehouse, order Order, store *Store) {
 
 		batch, err := w.FetchBatchForClient(order.Client, productName)
 		if err != nil {
+			slog.Info(fmt.Sprintf("[Loader: %s]: Товарa <%s> для <%s>-<%s> нет или уже весь отгружен\n", l.ID, order.ProductName, store.ID, store.Name))
 			break
 		}
 

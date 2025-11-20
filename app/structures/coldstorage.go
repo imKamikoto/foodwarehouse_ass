@@ -41,19 +41,21 @@ func (cs *ColdStorage) RemoveOldest() (*Batch, error) {
 		return nil, fmt.Errorf("cold storage %s empty (Batches size = 0)", cs.ID)
 	}
 
-	oldestBatch, oldestIdx := cs.GetOldestBatch()
-	if oldestBatch == nil || oldestIdx < 0 {
+	_, oldestIdx := cs.GetOldestBatch()
+	if oldestIdx < 0 {
 		return nil, fmt.Errorf("failed to find oldest batch in %s", cs.ID)
 	}
 
+	removed := cs.Batches[oldestIdx]
+
 	slog.Info(fmt.Sprintf(
 		"[ColdStorage: %s]: Утилизирует старый товар <%s>, <%s>, для <%s>\n",
-		cs.ID, oldestBatch.ID, oldestBatch.Name, oldestBatch.Client,
+		cs.ID, removed.ID, removed.Name, removed.Client,
 	))
 
 	cs.Batches = append(cs.Batches[:oldestIdx], cs.Batches[oldestIdx+1:]...)
 
-	return oldestBatch, nil
+	return &removed, nil
 }
 
 func (cs *ColdStorage) IsFull() bool {

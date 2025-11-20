@@ -38,11 +38,11 @@ func (d *Dispatcher) ReceiveBatch(b Batch) error {
 }
 
 func (d *Dispatcher) ProcessOrder(order Order, store *Store) {
+	slog.Info(fmt.Sprintf("🧑‍💼 [Dispatcher]: Обработка заказа %s - %s от магазина %s\n", order.ID, order.ProductName, store.Name))
 	loader := d.AssignLoader()
 	if loader == nil {
 		slog.Info("🧑‍💼 [Dispatcher]: Диспетчер: Нет доступных погрузчиков!")
 		return
 	}
-	slog.Info(fmt.Sprintf("🧑‍💼 [Dispatcher]: Обработка заказа %s - %s от магазина %s\n", order.ID, order.ProductName, store.Name))
 	loader.ServeClient(d.Warehouse, order, store)
 }
