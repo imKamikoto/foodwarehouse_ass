@@ -3,6 +3,7 @@ package structures
 import (
 	"fmt"
 	"log/slog"
+	"time"
 )
 
 type Dispatcher struct {
@@ -15,9 +16,23 @@ func (d *Dispatcher) AssignLoader() *Loader {
 	if len(d.Warehouse.Loaders) == 0 {
 		return nil
 	}
-	d.lastIndex = (d.lastIndex + 1) % len(d.Warehouse.Loaders)
-	slog.Info(fmt.Sprintf("🧑‍💼 [Dispatcher]: Назначаем погрузчика(ов): %s\n", d.Warehouse.Loaders[d.lastIndex].ID))
-	return d.Warehouse.Loaders[d.lastIndex]
+
+	for {
+		loaders := d.Warehouse.Loaders
+		for i, loader := range loaders {
+			if !loader.IsBusy {
+				slog.Info(fmt.Sprintf(
+					"🧑‍💼 [Dispatcher]: Назначаем погрузчика: %s\n",
+					loader.ID,
+				))
+				return loaders[i]
+			}
+		}
+
+		// сюда попадаем, если все заняты
+		slog.Info("🧑‍💼 [Dispatcher]: все погрузчики заняты, ждём...")
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 // Приём новой партии от поставщика

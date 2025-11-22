@@ -12,10 +12,10 @@ type Loader struct {
 	CurrentOrder *Order
 }
 
-func CreateLoader(id string) *Loader {
+func NewLoader(id string, isBusy bool) *Loader {
 	return &Loader{
 		ID:           id,
-		IsBusy:       false,
+		IsBusy:       isBusy,
 		CurrentOrder: nil,
 	}
 }

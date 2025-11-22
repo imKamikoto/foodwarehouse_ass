@@ -1,7 +1,9 @@
 package structures
 
 import (
+	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -40,9 +42,11 @@ func NewSimulation(start time.Time, step time.Duration) *Simulation {
 	cs := NewColdStorage(idGen["coldStorage"](), 5)
 
 	// погрузчики
+	// сейчас первый всегда занят, для демонстрации, что выбор между двумя погрузчиками
+	// TODO что-то придумать с этими погрузчиками, пока не попадают под план того, как работает система
 	loaders := []*Loader{
-		CreateLoader(idGen["loader"]()),
-		CreateLoader(idGen["loader"]()),
+		NewLoader(idGen["loader"](), true),
+		NewLoader(idGen["loader"](), false),
 	}
 
 	// склад + диспетчер
@@ -50,8 +54,8 @@ func NewSimulation(start time.Time, step time.Duration) *Simulation {
 
 	// поставщики
 	suppliers := []*Supplier{
-		{ID: idGen["supplier"](), Name: "Молочная ферма", ProductType: "Молоко"},
-		{ID: idGen["supplier"](), Name: "Сырзавод", ProductType: "Сыр"},
+		NewSupplier(idGen["supplier"](), "Молочная ферма", "Молоко"),
+		NewSupplier(idGen["supplier"](), "Сырзавод", "Сыр"),
 	}
 
 	// магазины
@@ -132,39 +136,72 @@ func (s *Simulation) RunSteps(steps int) {
 		slog.Info("\n\nsimulation step", "index", i+1, "time", s.Clock)
 		s.SimulationStep()
 	}
-	s.logFinalStats()
 }
 
 // RunUntil — автоматический режим: крутить симуляцию, пока не пройдёт duration модельного времени.
 func (s *Simulation) RunUntil() {}
 
 // logFinalStats — просто лог итоговых метрик
-func (s *Simulation) logFinalStats() {
-	slog.Info("=== Итоговая статистика ===\n",
-		"received", s.Metrics.Received,
-		"discarded", s.Metrics.Discarded,
-		"delivered", s.Metrics.Delivered,
-	)
+func (s *Simulation) LogFinalStats() {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "\n=== Итоговая статистика ===")
+	fmt.Fprintf(&b, "\nreceived = %d", s.Metrics.Received)
+	fmt.Fprintf(&b, "\ndiscarded = %d", s.Metrics.Discarded)
+	fmt.Fprintf(&b, "\ndelivered = %d", s.Metrics.Delivered)
 
 	slog.Info("warehouse cameras",
 		"count", len(s.Warehouse.Cameras),
 	)
+	fmt.Fprintf(&b, "\n\n=== Информация о складе после выполнения программы ===\n")
 
 	if len(s.Warehouse.Cameras) > 0 {
-		slog.Info("camera state",
-			"id", s.Warehouse.Cameras[0].ID,
-			"batches", len(s.Warehouse.Cameras[0].Batches),
-		)
+		fmt.Fprintf(&b, "\nКамера хранения : %s\n", s.Warehouse.Cameras[0].ID)
+		fmt.Fprintf(&b, "Количество товаров внутри : %d\n\n", len(s.Warehouse.Cameras[0].Batches))
+	}
+	slog.Info(b.String())
+}
+
+func (s *Simulation) LogStoreStats() {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "\n==================== 🏪 Stores summary ====================\n\n")
+
+	for _, store := range s.Stores {
+		fmt.Fprintf(&b, "🏪 Магазин: %s (%s)\n", store.Name, store.ID)
+
+		// Заказы
+		fmt.Fprintf(&b, "  📑 Заказы (%d):\n", len(store.Orders))
+		if len(store.Orders) == 0 {
+			fmt.Fprintf(&b, "    — нет оформленных заказов\n")
+		} else {
+			for _, o := range store.Orders {
+				product := o.ProductName
+				if product == "" {
+					product = "<не указан>"
+				}
+				fmt.Fprintf(&b, "    • [%s] %s (товар: %s)\n", o.ID, o.Client, product)
+			}
+		}
+
+		// Ассортимент
+		fmt.Fprintf(&b, "  📦 Ассортимент (%d):\n", len(store.Assortment))
+		if len(store.Assortment) == 0 {
+			fmt.Fprintf(&b, "    — полки пусты :(\n")
+		} else {
+			for _, bch := range store.Assortment {
+				fmt.Fprintf(
+					&b,
+					"    • [%s] %s (от поставки для %s)\n",
+					bch.ID, bch.Name, bch.Client,
+				)
+			}
+		}
+
+		fmt.Fprintf(&b, "\n")
 	}
 
-	slog.Info("stores info")
-	for _, store := range s.Stores {
-		slog.Info("name", "store_name", store.Name)
-		for _, order := range store.Orders {
-			slog.Info("orders", "order_name", order.ProductName, "order_id", order.ID)
-		}
-		for _, a := range store.Assortment {
-			slog.Info("assortment", "name", a.Name, "order_id", a.ID)
-		}
-	}
+	fmt.Fprintf(&b, "===========================================================\n")
+
+	slog.Info(b.String())
 }
