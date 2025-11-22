@@ -59,10 +59,27 @@
 git clone https://github.com/imKamikoto/foodwarehouse_ass.git
 cd foodwarehouse_ass
 cd app
+```
+
+```bash
 
 # инициализируем/обновляем зависимости (если нужно)
 go mod tidy
 
-# запуск симуляции
-go run ./...
+# список доступных аргументов (параметров)
+go run . -help
+
+> go run . -help
+  -mode string
+        simulation mode: 'step' or 'auto' (default "step")
+  -step string
+        simulation step duration (e.g. '200ms', '1s') (default "500ms")
+  -steps int
+        number of steps in 'step' mode (default 5)
+
+# запуск в пошаговом режиме
+go run . -mode=step -steps=5
+
+# запуск в автоматическом режиме (still in progress)
+go rub . -mode=auto -step=500ms
 ```
